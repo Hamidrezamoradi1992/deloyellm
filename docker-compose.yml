@@ -1,6 +1,25 @@
 version: '3.8'
 
 services:
+  mongodb:
+    image: mongo:latest
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./volume/db:/data/db
+    networks:
+      - app-network
+
+  redis:
+    image: redis:alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
   web:
     build: .
     ports:
@@ -21,6 +40,7 @@ services:
       - OTP_UTL=https://api2.ippanel.com/api/v1/sms/pattern/normal/send
       - STATIC_PATH=http://web:8000/
       - STATIC_DIR=static/media
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./volume/app:/usr/src/app/
     depends_on:
@@ -28,27 +48,6 @@ services:
       - redis
     networks:
       - app-network
-
-  mongodb:
-    image: mongo:latest
-    restart: always
-    ports:
-      - "27017:27017"
-    volumes:
-      - ./volume/db:/data/db
-    networks:
-      - app-network
-
-  redis:
-    image: redis:alpine
-    restart: always
-    ports:
-      - "6379:6379"
-    depends_on:
-      - mongodb
-    networks:
-      - app-network
-
 networks:
   app-network:
     driver: bridge
