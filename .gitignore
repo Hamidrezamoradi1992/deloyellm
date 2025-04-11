@@ -173,6 +173,6 @@ cython_debug/
 /static/media/
 /venv
 shell.py
-wb.py
 /volume/db/**
 !/volume/db/*.html
+nginx

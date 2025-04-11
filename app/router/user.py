@@ -1,9 +1,13 @@
 import os
+from datetime import datetime
+
+import requests
 from fastapi import APIRouter, UploadFile, Depends, Body,Response
 from app.schema.inpout_user import UserAuthEmailModel, UserModelSchema
 from app.schema.jwt import JWTResponsePayload, JWTPayload
 from app.db.query.user import UserQuery
 from app.schema.output_user import UserModelOutputSchema
+from app.servise.api_llm import ApiLLm
 from config.settings import setting
 from app.utils.utils import Utils
 from app.utils.JWT import JWTHandler
@@ -66,3 +70,18 @@ async def create_update_profile(data: UserModelSchema,  # noqa
         user = await UserQuery.update_user_profile(verifi.id, data)
         return user
     raise InvalidToken
+
+
+@router.post('/llm/')
+def llm1_1(message: str):
+    url = "http://87.236.166.163:8000/ask"
+    headers = {"Content-Type": "application/json"}
+    data = {"question": message}
+    start = datetime.now()
+    response = requests.post(url, headers=headers, json=data)
+    end = datetime.now()
+    print(f"AI processing time: {end - start}")
+    try:
+        return response.json()
+    except ValueError:
+        return {"error": "Invalid JSON response", "text": response.text}

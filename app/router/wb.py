@@ -1,3 +1,4 @@
+import requests
 from fastapi import APIRouter, HTTPException, WebSocket, Depends
 from app.schema.jwt import JWTPayload
 from app.utils.JWT import JWTHandler
@@ -13,9 +14,10 @@ from langchain_openai import ChatOpenAI
 
 router = APIRouter()
 
-
 from concurrent.futures import ProcessPoolExecutor
 import asyncio
+
+
 #
 #
 # async def process_chunk_in_worker(chunk):
@@ -132,44 +134,86 @@ import asyncio
 #
 
 
-
 @router.websocket("/12/")
 async def signaling(websocket: WebSocket):
     await websocket.accept()
     while True:
         try:
-            # دریافت پیام از کلاینت
             message = await websocket.receive_text()
             data = json.loads(message)
 
-            if data.get("type") == "ping":  # پیام پینگ دریافت شده
-                print(f"Ping received: {data['content']}")
-
-                # پردازش پیام توسط مدل AI
-                model_name = "gpt-4o-mini"
-                messages = [{"role": "user", "content": data["content"]}]
-
-                llm = ChatOpenAI(
-                    model=model_name,
-                    base_url="https://api.avalai.ir/v1",
-                    api_key="aa-c0dvbvKWKbbF2G5KLldcykBYQOUzNmylJBM6TCDatljY3MFQ",
-                )
-
+            if data.get("type") == "ping":
                 start = datetime.now()
-                response = []
-                async for chunk in llm.astream(messages):
-                    response.append(chunk.text())
+                url = "http://87.236.166.163:8000/ask"
+                headers = {"Content-Type": "application/json"}
+                data = {"question": data['content']}
+                response = requests.post(url, headers=headers, json=data)
                 end = datetime.now()
-
                 print(f"AI processing time: {end - start}")
-                pong_message = {"type": "pong", "response": "".join(response)}
-
-                await websocket.send_text(json.dumps(pong_message))
+                print(response.text)
+                await websocket.send_text(response.json()['response'])
 
         except Exception as e:
             print(f"Error: {e}")
             await websocket.close()
             break
+
+###########################31121212########################3
+
+# from fastapi import WebSocket, APIRouter
+# import httpx
+# import json
+# from datetime import datetime
+#
+# router = APIRouter()
+#
+# from fastapi import WebSocket, APIRouter
+# import httpx
+# import json
+# from datetime import datetime
+#
+# router = APIRouter()
+
+
+# @router.websocket("/12/")
+# async def signaling(websocket: WebSocket):
+#     await websocket.accept()
+#     while True:
+#         try:
+#             # دریافت پیام از کلاینت
+#             message = await websocket.receive_text()
+#             data = json.loads(message)
+#
+#             if data.get("type") == "ping":  # پیام پینگ دریافت شده
+#                 start = datetime.now()
+#                 url = "http://87.236.166.163:8000/ask"
+#                 headers = {"Content-Type": "application/json"}
+#                 payload = {"question": data['content']}
+#
+#                 # استفاده از httpx برای درخواست غیرهمزمان
+#                 async with httpx.AsyncClient() as client:
+#                     response = await client.post(url, headers=headers, json=payload)
+#
+#                 end = datetime.now()
+#                 print(f"AI processing time: {end - start}")
+#
+#                 # ارسال پاسخ از سرور به کلاینت
+#                 await websocket.send_text(response.json().get('response', 'No response'))
+#
+#         except Exception as e:
+#             print(f"Error: {e}")
+#             await websocket.close()
+#             break
+
+
+from app.servise.api_llm import ApiLLm
+
+
+# @router.post()
+# async def llm1_1(massage: str):
+#     res = ApiLLm(massage=massage)
+#     response = await res.send()
+#     return response
 
 
 from fastapi import WebSocket
